@@ -1,161 +1,135 @@
 readme = """# lindblad-noise-sim
+Simulation and analysis of open quantum system dynamics using the Lindblad master equation — single-qubit decoherence, parameter sweeps, entanglement sudden death, and real IBM QPU noise characterisation.
 
-A from-scratch simulation of open quantum system dynamics using the Lindblad
-master equation. Built as part of my MSc in Quantum Information Technology
-to develop hands-on intuition for qubit decoherence — the central obstacle
-in building useful quantum computers.
+# Open Quantum Systems: Lindblad Decoherence Simulation
 
-Everything runs in Python with QuTiP. No quantum hardware access needed.
-The final part plugs in real calibration data from IBM's ibm_brisbane QPU
-to simulate what actually happens to a qubit on a real machine.
+## Project Overview
 
----
+This project simulates qubit decoherence from scratch using the Lindblad master equation framework, validates results against exact analytical solutions, and models real IBM quantum hardware noise parameters to understand what physically limits quantum computation.
 
-## What This Is About
+**Author:** Ali Mammadzada
+**Email:** [mammadzada2303@gmail.com](mailto:mammadzada2303@gmail.com)
+**LinkedIn:** [https://www.linkedin.com/in/alimammadzada/](https://www.linkedin.com/in/alimammadzada/)
+**Location:** Gdańsk, Poland
 
-Real qubits don't live in isolation. They interact with their environment
-constantly — losing energy to it, losing phase coherence, becoming mixed
-states. This process is called decoherence and it is the reason quantum
-computers make errors.
-
-The standard mathematical framework for this is the Lindblad master equation:
-
-    dρ/dt = -i[H, ρ] + Σ_k ( L_k ρ L_k† - ½{L_k†L_k, ρ} )
-
-where ρ is the density matrix, H is the system Hamiltonian, and the L_k
-are collapse operators that encode how the system interacts with its
-environment. Two physical processes are modelled here:
-
-- Amplitude damping (L₁ = √γ₁ · σ₋): the qubit loses energy and
-  relaxes to the ground state. Characterised by T1 = 1/γ₁.
-
-- Pure dephasing (L₂ = √γ_φ · σ_z): the qubit loses phase coherence
-  without changing its energy populations. Characterised by T2*.
-
-The total coherence decay rate is γ_total = γ₁/2 + 2γ_φ, which gives
-T2* = 1/γ_total. A fundamental constraint is T2* ≤ 2T1 — dephasing can
-only make things worse, never better.
+**Duration:** 2 weeks (January 2026)
+**Tools:** Python, QuTiP 5.x, NumPy, SciPy, Matplotlib, Google Colab
 
 ---
 
-## Project Structure
+## What I Built
 
-The project is split into 5 parts, each building on the previous one.
+### Simulation Components:
+1. **Single-qubit Lindblad dynamics** — amplitude damping + pure dephasing, tracked via density matrix evolution
+2. **Analytical validation** — exact Bloch equation solutions overlaid on simulation; residual error analysis
+3. **Bloch sphere visualisation** — full 3D spiral trajectory from |+⟩ to ground state
+4. **Parameter sweeps** — γ₁ and γ_φ swept systematically; T1 extracted via exponential fitting; T2 ≤ 2T1 bound proven on 1600 parameter combinations
+5. **Two-qubit entanglement decay** — Bell state under independent local noise; concurrence tracked over time
+6. **Entanglement Sudden Death (ESD)** — finite-time entanglement collapse demonstrated and characterised
+7. **Real IBM hardware** — ibm_brisbane calibration data (T1, T2*) plugged into simulation; physical μs timescales modelled
 
-### Part 1 — Single Qubit Lindblad Simulation
-The starting point. A qubit initialised in the excited state |0⟩ and
-the superposition |+⟩ is evolved under amplitude damping and dephasing.
-The expectation values ⟨σ_x⟩, ⟨σ_y⟩, ⟨σ_z⟩ are tracked over time,
-along with the state purity Tr(ρ²).
+### Physics Modelled:
+- Lindblad master equation: dρ/dt = -i[H,ρ] + Σ_k ( L_k ρ L_k† - ½{L_k†L_k, ρ} )
+- Amplitude damping: L₁ = √γ₁ · σ₋ (T1 energy relaxation)
+- Pure dephasing: L₂ = √γ_φ · σ_z (T2 phase decoherence)
+- Total decoherence rate: γ_total = γ₁/2 + 2γ_φ → T2* = 1/γ_total
+- Entanglement measure: concurrence C(t) for two-qubit mixed states
 
-The purity result is non-obvious: starting from a pure state, the system
-passes through maximum mixedness (purity = 0.5) during the transition,
-then recovers back to purity = 1.0 at the ground state. Two pure states
-connected by decoherence, with maximum uncertainty in between.
+---
 
-### Part 2 — Analytical Validation and Bloch Sphere
-The simulation is validated against exact analytical solutions of the
-Lindblad equation. For the |+⟩ initial state:
+## Key Results
 
-    ⟨σ_z⟩(t) = -1 + exp(-γ₁ t)
-    ⟨σ_x⟩(t) = cos(ω₀t) · exp(-γ_total t)
-    ⟨σ_y⟩(t) = sin(ω₀t) · exp(-γ_total t)
+### Single-Qubit Decoherence:
+- Simulation matches exact analytical solution to **~10⁻⁹ numerical precision** for population decay
+- Corrected a critical factor-of-2 error in dephasing convention (L = √γ_φ·σ_z gives off-diagonal decay at 2γ_φ, not γ_φ)
+- Purity Tr(ρ²) drops from 1.0 → 0.5 → 1.0: two pure states connected through maximum mixedness
 
-One thing worth noting: when you define L₂ = √γ_φ · σ_z in QuTiP, the
-dephasing contribution to γ_total is 2γ_φ not γ_φ. This factor of 2 comes
-from the dissipator structure (σ_z² = I) and is a common source of
-confusion in the literature. The residual error plot shows this clearly —
-⟨σ_z⟩ matches the analytic formula to machine precision (~1e-10), while
-⟨σ_x,y⟩ only match after applying the corrected γ_total.
+### Parameter Sweeps:
+- T1 extracted from simulated decay curves via exponential fitting: **0.00% error** across all 6 tested rates
+- **T2* ≤ 2T1 proved numerically** across all 1600 parameter combinations in the joint sweep
+- Dephasing (γ_φ = 0.01) reduces T2* by ~45% compared to pure amplitude damping — dephasing is the dominant decoherence source
 
-The Bloch sphere plot shows the full trajectory: a spiral starting at the
-equator (|+⟩), rotating around the z-axis from Hamiltonian precession,
-shrinking inward from dephasing, and drifting down to the south pole (|1⟩,
-ground state) from amplitude damping. The two noise channels act
-simultaneously and independently — that is exactly what the spiral encodes.
+### Entanglement Sudden Death:
+- Bell state loses all entanglement at **finite time t_ESD ≈ 0.96/γ₁** — not asymptotically
+- Qubit purity at t_ESD: individual qubits are still ~30% coherent when entanglement completely dies
+- **Novel comparison:** pure amplitude damping causes ESD; pure dephasing at identical T2* rate causes only asymptotic decay — same T2*, completely different entanglement fate
+
+### Real IBM ibm_brisbane Data:
+- T1 range across measured qubits: **156 – 231 μs**
+- T2* range: **87 – 143 μs**
+- T2*/T1 ratio: **0.56 – 0.69** — all qubits are dephasing-dominated (ratio well below the 2.0 bound)
+- Dephasing (γ_φ) contributes ~2× more to decoherence than energy relaxation on current IBM superconducting qubits
+
+---
+
+## Visualisations
+
+### Part 1 — Single Qubit Dynamics
+![Expectation values](part1_expectation_values.png)
+*⟨σ_x⟩, ⟨σ_y⟩, ⟨σ_z⟩ vs time showing T1 decay from excited state*
+
+![Purity](part1_purity.png)
+*State purity Tr(ρ²): starts pure, passes through maximum mixedness, recovers to ground state*
+
+### Part 2 — Analytical Validation & Bloch Sphere
+![Simulation vs analytic](part2_simulation_vs_analytic.png)
+*QuTiP simulation (solid) overlaid with exact analytical Bloch equations (dashed) — perfect overlap after correcting dephasing convention*
+
+![Residual error](part2_residual_error.png)
+*Residual error on log scale: population at ~10⁻⁹ (machine precision), coherences at ~10⁻⁵ (ODE tolerance)*
+
+![Bloch sphere](part2_bloch_sphere.png)
+*3D Bloch sphere spiral: qubit precesses and spirals from |+⟩ (equator) down to |1⟩ (south pole) under combined amplitude damping and dephasing*
 
 ### Part 3 — Parameter Sweeps
-Systematic noise characterisation across a range of γ₁ and γ_φ values.
+![γ₁ sweep](part3A_gamma1_sweep.png)
+*Population decay curves at 6 amplitude damping rates — all cross 1/e at exactly T1 = 1/γ₁*
 
-- γ₁ sweep (0.01 → 0.5): T1 decay curves at 6 different rates.
-  Exponential fitting with scipy recovers T1 = 1/γ₁ with 0.00% error
-  across all values — validating that the simulation can be used as a
-  digital twin for real T1 measurement experiments.
+![γ_φ sweep](part3B_gammaphi_sweep.png)
+*Coherence envelope at 6 dephasing rates — T2* shrinks from 40 to 1.6 at fixed γ₁*
 
-- γ_φ sweep (0 → 0.3): Dephasing only affects coherences, not
-  populations. Even a small γ_φ = 0.01 nearly halves T2* compared to
-  the γ_φ = 0 case. Dephasing is more destructive than it looks.
+![T1 fit](part3C_T1_fit.png)
+*Fitted vs theoretical T1 — all points on y=x line, 0.00% error*
 
-- 2D heatmap: Both rates swept simultaneously across a 40×40 grid.
-  The T2*/T1 ratio is computed at every point — it never exceeds 2.0,
-  with the maximum achieved exactly at γ_φ = 0. The T2 ≤ 2T1 bound is
-  proven numerically across 1600 parameter combinations.
+![T2 bound heatmap](part3D_heatmap_T2_bound.png)
+*2D heatmap proving T2*/T1 ≤ 2 across 1600 combinations; ratio = 2.0 only at γ_φ = 0*
 
-### Part 4 — Two-Qubit Entanglement Decay
-The system is extended to two qubits prepared in the Bell state:
+### Part 4 — Two-Qubit Entanglement
+![ESD](part4A_concurrence.png)
+*Bell state concurrence hitting zero at finite time t ≈ 4.9 — Entanglement Sudden Death*
 
-    |Φ+⟩ = (|00⟩ + |11⟩) / √2
+![ESD sweep](part4B_ESD_sweep.png)
+*ESD time vs γ₁ — stronger noise causes earlier but always finite-time entanglement death*
 
-Both qubits are subjected to independent local Lindblad noise (no
-correlated environment). Entanglement is tracked using concurrence C(t),
-which runs from 1.0 (maximally entangled) to 0 (separable).
+![Asymmetric noise](part4C_asymmetric.png)
+*Asymmetric noise: two noisy qubits kill entanglement faster than one qubit at double the rate*
 
-The main result is **Entanglement Sudden Death (ESD)**: the concurrence
-hits exactly zero at a finite time, not asymptotically. This is distinct
-from single-qubit decoherence, which always decays exponentially toward
-zero but never truly reaches it in finite time. The Bell state loses its
-entanglement completely while the individual qubits still retain partial
-coherence.
+![Damping vs dephasing](part4D_damping_vs_dephasing.png)
+*Same T2* rate, different noise type — amplitude damping causes ESD, pure dephasing does not*
 
-The most striking finding comes from comparing noise types at equal T2* rates:
-pure amplitude damping causes ESD, while pure dephasing at the same total
-decoherence rate leads only to asymptotic decay. Same T2*, fundamentally
-different fate for entanglement. The physical reason: amplitude damping
-drains the |11⟩ population directly, destroying the superposition that
-makes the Bell state entangled. Dephasing can only rotate phases — it
-cannot change populations, so it cannot fully kill entanglement in finite time.
+### Part 5 — Real IBM Hardware
+![IBM single qubit](part5A_IBM_single_qubit.png)
+*5 ibm_brisbane qubits simulated in real μs timescale — population and coherence decay*
 
-### Part 5 — Real IBM Hardware Data
-T1 and T2* values are taken directly from the ibm_brisbane calibration table
-(127-qubit Eagle QPU). No API or account needed — the calibration page is
-publicly visible at quantum.ibm.com.
+![T1 T2 bar chart](part5B_IBM_T1_T2_bar.png)
+*T1 vs T2* vs 2T1 bound per qubit — all operate below the fundamental limit*
 
-Typical values for ibm_brisbane qubits:
-- T1 range: 156 – 231 μs
-- T2* range: 87 – 143 μs
-- T2*/T1 ratio: 0.56 – 0.69 (well below the 2.0 bound — dephasing-dominated)
-
-The Lindblad rates are computed as:
-    γ₁   = 1 / T1
-    γ_φ  = ( 1/T2* - 1/(2·T1) ) / 2
-
-These are plugged into the same simulation framework from Parts 1–4,
-but now with the time axis in real microseconds. The resulting decay curves
-show what happens on an actual IBM QPU — the qubit coherence window you
-have to run a circuit before the state becomes useless.
+![IBM entanglement](part5C_IBM_entanglement.png)
+*Bell state entanglement decay with real IBM noise parameters — concurrence and single-qubit purity*
 
 ---
 
-## Key Findings
+## Technologies Used
 
-1. The factor-of-2 trap: Defining L = √γ_φ · σ_z gives off-diagonal
-   decay at rate 2γ_φ, not γ_φ. This is physically correct but easy to
-   miss — using the wrong formula gives ~50% error in T2* predictions.
-
-2. Dephasing is more destructive than amplitude damping at equal T2* rates:
-   In the parameter sweeps, adding even a small amount of γ_φ collapses
-   T2* much faster than equivalent γ₁. On real IBM hardware, T2*/T1 ≈ 0.6
-   across all measured qubits — meaning pure dephasing contributes more
-   to decoherence than energy relaxation on current superconducting devices.
-
-3. Entanglement Sudden Death is not the same as decoherence:
-   The Bell state loses all entanglement at a finite time even though
-   individual qubits are still partially coherent. Amplitude damping causes
-   this; pure dephasing at the same T2* rate does not. This distinction
-   matters directly for quantum error correction — two-qubit gate fidelity
-   is limited by ESD, not just by single-qubit T2*.
+- **QuTiP 5.x** — Lindblad master equation solver, density matrix evolution, concurrence
+- **Python** — NumPy, SciPy (exponential fitting), Matplotlib
+- **Google Colab** — GPU-free cloud execution
+- **IBM Quantum** — Calibration data from ibm_brisbane (no API needed, public table)
 
 ---
 
-## Requirements
+## How to Run
 
+### Prerequisites:
+```bash
+pip install qutip numpy scipy matplotlib
